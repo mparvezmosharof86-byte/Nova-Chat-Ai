@@ -31,7 +31,7 @@ jobs:
       run: |
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-    - name: Scaffold Nova Chat Direct-Local Project
+    - name: Scaffold Nova Chat Absolute Fix Project
       run: |
         mkdir -p app/src/main/java/com/novastudio24/chat
         mkdir -p app/src/main/res/layout
@@ -78,8 +78,8 @@ jobs:
                 applicationId "com.novastudio24.chat"
                 minSdk 24
                 targetSdk 34
-                versionCode 2
-                versionName "1.1.0"
+                versionCode 3
+                versionName "1.2.0"
             }
 
             buildTypes {
@@ -101,7 +101,7 @@ jobs:
         }
         EOF
 
-        # 4. AndroidManifest.xml (usesCleartextTraffic Enabled for Direct Localhost)
+        # 4. AndroidManifest.xml
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -145,7 +145,7 @@ jobs:
         </FrameLayout>
         EOF
 
-        # 6. Direct Localhost + Firebase Hybrid Web App
+        # 6. Absolute Fixed Web UI
         cat << 'EOF' > app/src/main/assets/www/index.html
         <!DOCTYPE html>
         <html lang="bn">
@@ -174,14 +174,13 @@ jobs:
         </head>
         <body class="h-screen flex flex-col overflow-hidden select-none">
 
-          <!-- Left Sliding Drawer -->
+          <!-- Left Drawer -->
           <div id="drawer" class="fixed inset-y-0 left-0 w-72 bg-[#1e1f20] border-r border-[#282a2c] z-50 transform -translate-x-full transition-transform duration-300 flex flex-col p-4 shadow-2xl">
             <div class="flex items-center justify-between pb-4 border-b border-[#282a2c]">
               <span class="text-xs font-bold text-[#8ab4f8] tracking-widest">NOVA STUDIO 24</span>
               <button onclick="toggleDrawer()" class="p-1 rounded-full hover:bg-[#282a2c]"><i data-lucide="x" class="w-5 h-5 text-gray-400"></i></button>
             </div>
 
-            <!-- Model Switcher Pills -->
             <div class="mt-4 p-1.5 bg-[#131314] rounded-xl border border-[#282a2c]">
               <span class="text-[11px] text-gray-400 px-2 font-medium">SELECT MODEL</span>
               <div class="grid grid-cols-2 gap-1 mt-1">
@@ -190,11 +189,10 @@ jobs:
               </div>
             </div>
 
-            <!-- Token Counter -->
             <div class="mt-4 p-3 bg-[#131314] rounded-xl border border-[#282a2c]">
               <div class="flex items-center justify-between text-xs text-gray-400 font-semibold mb-2">
                 <span>TOKEN METRICS</span>
-                <span id="tokenStatus" class="text-emerald-400">DIRECT</span>
+                <span id="tokenStatus" class="text-emerald-400">ACTIVE</span>
               </div>
               <div class="space-y-1.5 text-[11px] text-gray-300 font-mono">
                 <div class="flex justify-between"><span>Prompt:</span><span id="promptTokens" class="text-[#8ab4f8]">0</span></div>
@@ -233,7 +231,7 @@ jobs:
                 <i data-lucide="sparkles" class="w-6 h-6 text-white"></i>
               </div>
               <h1 class="text-2xl font-bold text-white">Nova Chat Ai</h1>
-              <p class="text-xs text-gray-400 max-w-xs leading-relaxed">Direct Ultra-Fast Offline Engine Link Enabled.</p>
+              <p class="text-xs text-gray-400 max-w-xs leading-relaxed">Absolute Fixed Local &amp; Cloud Hybrid Bridge.</p>
             </div>
           </main>
 
@@ -326,7 +324,7 @@ jobs:
                     <i data-lucide="sparkles" class="w-6 h-6 text-white"></i>
                   </div>
                   <h1 class="text-2xl font-bold text-white">Nova Chat Ai</h1>
-                  <p class="text-xs text-gray-400 max-w-xs leading-relaxed">Direct Ultra-Fast Offline Engine Link Enabled.</p>
+                  <p class="text-xs text-gray-400 max-w-xs leading-relaxed">Absolute Fixed Local &amp; Cloud Hybrid Bridge.</p>
                 </div>
               `;
               lucide.createIcons();
@@ -426,7 +424,7 @@ jobs:
               container.appendChild(typingDiv);
               container.scrollTop = container.scrollHeight;
 
-              // ১. প্রথমে সরাসরি একই ফোনের লোকাল ইঞ্জিনে কানেক্ট করা (সুপার ফাস্ট)
+              // চেষ্টা ১: সরাসরি লোকাল পোর্ট ৮০৮০ তে রিকোয়েস্ট পাঠানো
               try {
                 const localRes = await fetch(LOCAL_ENGINE_URL, {
                   method: 'POST',
@@ -434,7 +432,7 @@ jobs:
                   body: JSON.stringify({
                     model: activeModel === 'spark' ? 'qwen2.5-coder-1.5b' : 'qwen2.5-coder-7b',
                     messages: [
-                      { role: 'system', content: 'You are Nova Titan Coder by Nova Studio 24. Write clean, complete code and explain logic clearly in Bengali or English.' },
+                      { role: 'system', content: 'You are Nova Titan Coder by Nova Studio 24. Write clean, complete code and explain logic clearly.' },
                       { role: 'user', content: text }
                     ],
                     max_tokens: 2048,
@@ -448,13 +446,13 @@ jobs:
                   document.getElementById('typingIndicator').remove();
                   appendMessage('ai', answer);
                   updateTokens(text.length, answer.length);
-                  return; // কাজ শেষ!
+                  return;
                 }
-              } catch (localErr) {
-                // লোকাল কানেক্ট না পেলে ফায়ারবেস ব্যাকআপে পাঠানো
+              } catch (e) {
+                // লোকাল ফেল করলে ফায়ারবেসে যাবে
               }
 
-              // ২. ফায়ারবেস ব্যাকআপ (যদি অন্য কোনো ফোন থেকে ব্যবহার করা হয়)
+              // চেষ্টা ২: ফায়ারবেস ব্যাকআপ ব্রিজ
               const reqId = "req_" + Date.now();
               try {
                 await fetch(`${FIREBASE_URL}/requests/pending/${reqId}.json`, {
@@ -477,43 +475,38 @@ jobs:
 
                     if (data && data.response) {
                       clearInterval(pollInterval);
-                      const tElem = document.getElementById('typingIndicator');
-                      if (tElem) tElem.remove();
-
+                      document.getElementById('typingIndicator').remove();
                       appendMessage('ai', data.response);
                       updateTokens(text.length, data.response.length);
                       fetch(`${FIREBASE_URL}/requests/completed/${reqId}.json`, { method: 'DELETE' });
                     }
                   } catch (e) {}
 
-                  if (attempts > 50) {
+                  if (attempts > 45) {
                     clearInterval(pollInterval);
-                    const tElem = document.getElementById('typingIndicator');
-                    if (tElem) tElem.remove();
-                    appendMessage('ai', "⚠️ Engine Timeout: Make sure 'Nova Titan Engine' app is running!");
+                    document.getElementById('typingIndicator').remove();
+                    appendMessage('ai', "⚠️ Engine Timeout: Make sure 'Nova Titan Engine' app is running in the background!");
                   }
                 }, 1500);
 
               } catch (err) {
-                const tElem = document.getElementById('typingIndicator');
-                if (tElem) tElem.remove();
-                appendMessage('ai', "[-] Connection Error: " + err.message);
+                document.getElementById('typingIndicator').remove();
+                appendMessage('ai', "[-] Error: " + err.message);
               }
             }
 
             function openVoiceMode() {
               document.getElementById('voiceOverlay').classList.remove('hidden');
-              const transcript = document.getElementById('voiceLiveTranscript');
-              transcript.innerText = "Listening to your voice...";
-
+              const t = document.getElementById('voiceLiveTranscript');
+              t.innerText = "Listening to your voice...";
               const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
               if (SpeechRecognition) {
                 recognition = new SpeechRecognition();
                 recognition.lang = 'bn-BD';
                 recognition.interimResults = true;
-                recognition.onresult = (e) => { transcript.innerText = e.results[0][0].transcript; };
+                recognition.onresult = (e) => { t.innerText = e.results[0][0].transcript; };
                 recognition.onend = () => {
-                  const s = transcript.innerText;
+                  const s = t.innerText;
                   if (s && s !== "Listening to your voice...") {
                     closeVoiceMode();
                     document.getElementById('userInput').value = s;
@@ -610,14 +603,14 @@ jobs:
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Nova-Chat-Ai-v1.1.0
+        name: Nova-Chat-Ai-v1.2.0
         path: app/build/outputs/apk/debug/app-debug.apk
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/heads/main')
       with:
-        tag_name: v1.1.0
-        name: "Nova Chat Ai v1.1.0 (Direct Local Engine Link)"
-        body: "Instant Local Engine Linking & Cleartext HTTP Permission by Nova Studio 24."
+        tag_name: v1.2.0
+        name: "Nova Chat Ai v1.2.0 (Absolute Fix)"
+        body: "Absolute Fixed Localhost & Hybrid Bridge by Nova Studio 24."
         files: app/build/outputs/apk/debug/app-debug.apk
