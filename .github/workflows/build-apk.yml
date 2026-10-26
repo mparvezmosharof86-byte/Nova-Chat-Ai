@@ -1,0 +1,635 @@
+name: Build Nova Chat Ai APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Stable Gradle 8.5
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.5'
+
+    - name: Accept Android SDK Licenses
+      run: |
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+    - name: Scaffold Nova Chat Ultra-Premium Project
+      run: |
+        mkdir -p app/src/main/java/com/novastudio24/chat
+        mkdir -p app/src/main/res/layout
+        mkdir -p app/src/main/assets/www
+
+        # 1. Settings Gradle
+        cat << 'EOF' > settings.gradle
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        rootProject.name = "Nova Chat Ai"
+        include ':app'
+        EOF
+
+        # 2. Root build.gradle
+        cat << 'EOF' > build.gradle
+        plugins {
+            id 'com.android.application' version '8.2.2' apply false
+        }
+        EOF
+
+        # 3. App build.gradle
+        cat << 'EOF' > app/build.gradle
+        plugins {
+            id 'com.android.application'
+        }
+
+        android {
+            namespace 'com.novastudio24.chat'
+            compileSdk 34
+
+            defaultConfig {
+                applicationId "com.novastudio24.chat"
+                minSdk 24
+                targetSdk 34
+                versionCode 1
+                versionName "1.0.0"
+            }
+
+            buildTypes {
+                debug {
+                    debuggable true
+                }
+                release {
+                    minifyEnabled false
+                }
+            }
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17
+            }
+        }
+
+        dependencies {
+            // Pure Native Android
+        }
+        EOF
+
+        # 4. AndroidManifest.xml (Full Audio & Hardware Acceleration)
+        cat << 'EOF' > app/src/main/AndroidManifest.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.RECORD_AUDIO" />
+            <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+            <application
+                android:allowBackup="true"
+                android:hardwareAccelerated="true"
+                android:icon="@android:drawable/sym_def_app_icon"
+                android:label="Nova Chat Ai"
+                android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+                <activity
+                    android:name=".MainActivity"
+                    android:configChanges="orientation|screenSize|keyboardHidden"
+                    android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        EOF
+
+        # 5. UI Layout
+        cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#131314">
+
+            <WebView
+                android:id="@+id/chatWebView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </FrameLayout>
+        EOF
+
+        # 6. Ultra-Premium Gemini & ChatGPT UI Web App
+        cat << 'EOF' > app/src/main/assets/www/index.html
+        <!DOCTYPE html>
+        <html lang="bn">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+          <title>Nova Chat Ai</title>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <script src="https://unpkg.com/lucide@latest"></script>
+          <style>
+            body { background-color: #131314; color: #e3e3e3; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+            .gemini-glass { background: rgba(30, 31, 36, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); }
+            .living-orb {
+              background: radial-gradient(circle, #8ab4f8 0%, #c58af9 40%, #ff8bcb 70%, transparent 100%);
+              filter: blur(25px);
+              animation: orbPulse 3s ease-in-out infinite alternate;
+            }
+            @keyframes orbPulse {
+              0% { transform: scale(0.85); opacity: 0.6; }
+              100% { transform: scale(1.25); opacity: 1; }
+            }
+            pre { background: #1e1f20; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); }
+            ::-webkit-scrollbar { width: 4px; }
+            ::-webkit-scrollbar-thumb { background: #282a2c; border-radius: 4px; }
+          </style>
+        </head>
+        <body class="h-screen flex flex-col overflow-hidden select-none">
+
+          <!-- Left Sliding Drawer -->
+          <div id="drawer" class="fixed inset-y-0 left-0 w-72 bg-[#1e1f20] border-r border-[#282a2c] z-50 transform -translate-x-full transition-transform duration-300 flex flex-col p-4 shadow-2xl">
+            <div class="flex items-center justify-between pb-4 border-b border-[#282a2c]">
+              <span class="text-xs font-bold text-[#8ab4f8] tracking-widest">NOVA STUDIO 24</span>
+              <button onclick="toggleDrawer()" class="p-1 rounded-full hover:bg-[#282a2c]"><i data-lucide="x" class="w-5 h-5 text-gray-400"></i></button>
+            </div>
+
+            <!-- Model Switcher Pills -->
+            <div class="mt-4 p-1.5 bg-[#131314] rounded-xl border border-[#282a2c]">
+              <span class="text-[11px] text-gray-400 px-2 font-medium">SELECT MODEL</span>
+              <div class="grid grid-cols-2 gap-1 mt-1">
+                <button id="btnSpark" onclick="switchModel('spark')" class="py-1.5 text-xs font-semibold rounded-lg bg-[#8ab4f8] text-[#131314] transition">Spark 1.5B</button>
+                <button id="btnTitan" onclick="switchModel('titan')" class="py-1.5 text-xs font-semibold rounded-lg text-gray-300 hover:text-white transition">Titan 7B</button>
+              </div>
+            </div>
+
+            <!-- Google AI Studio Style Live Token Counter -->
+            <div class="mt-4 p-3 bg-[#131314] rounded-xl border border-[#282a2c]">
+              <div class="flex items-center justify-between text-xs text-gray-400 font-semibold mb-2">
+                <span>TOKEN METRICS</span>
+                <span id="tokenStatus" class="text-emerald-400">ACTIVE</span>
+              </div>
+              <div class="space-y-1.5 text-[11px] text-gray-300 font-mono">
+                <div class="flex justify-between"><span>Prompt:</span><span id="promptTokens" class="text-[#8ab4f8]">0</span></div>
+                <div class="flex justify-between"><span>Response:</span><span id="respTokens" class="text-[#c58af9]">0</span></div>
+                <div class="flex justify-between font-bold text-white border-t border-[#282a2c] pt-1">
+                  <span>Total Tokens:</span><span id="totalTokens" class="text-emerald-400">0</span>
+                </div>
+              </div>
+              <div class="w-full bg-[#1e1f20] rounded-full h-1.5 mt-2.5 overflow-hidden">
+                <div id="tokenBar" class="bg-gradient-to-r from-[#8ab4f8] to-[#c58af9] h-full transition-all duration-300" style="width: 8%"></div>
+              </div>
+            </div>
+
+            <!-- Chat History List -->
+            <div class="mt-4 flex-1 overflow-y-auto">
+              <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Chat History</span>
+              <div id="historyList" class="mt-2 space-y-1"></div>
+            </div>
+          </div>
+
+          <!-- Top Navigation Header -->
+          <header class="h-14 px-4 flex items-center justify-between border-b border-[#1e1f20] bg-[#131314]/90 backdrop-blur z-20">
+            <button onclick="toggleDrawer()" class="p-2 rounded-full hover:bg-[#1e1f20] text-gray-300"><i data-lucide="menu" class="w-5 h-5"></i></button>
+            <div class="flex items-center space-x-2">
+              <span class="font-semibold text-base tracking-wide text-white">Nova Chat Ai</span>
+              <span id="activeModelBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-[#1e1f20] text-[#8ab4f8] font-mono border border-[#282a2c]">Spark 1.5B</span>
+            </div>
+            <!-- Dynamic Plus Button (Hidden on blank, pops up after first message) -->
+            <button id="btnNewChat" onclick="startNewChat()" class="p-2 rounded-full hover:bg-[#1e1f20] text-[#8ab4f8] opacity-0 scale-75 pointer-events-none transition-all duration-300">
+              <i data-lucide="plus" class="w-5 h-5"></i>
+            </button>
+          </header>
+
+          <!-- Chat Messages Area -->
+          <main id="chatContainer" class="flex-1 overflow-y-auto p-4 space-y-4 max-w-3xl mx-auto w-full">
+            <div id="welcomeScreen" class="h-full flex flex-col items-center justify-center text-center p-6 space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#8ab4f8] to-[#c58af9] flex items-center justify-center shadow-lg shadow-[#8ab4f8]/20">
+                <i data-lucide="sparkles" class="w-6 h-6 text-white"></i>
+              </div>
+              <h1 class="text-2xl font-bold text-white">Nova Chat Ai</h1>
+              <p class="text-xs text-gray-400 max-w-xs leading-relaxed">Dedicated Coding, System Architecture &amp; Game Planning Engine.</p>
+            </div>
+          </main>
+
+          <!-- Bottom Attachment Menu Popup -->
+          <div id="attachmentMenu" class="hidden absolute bottom-20 left-4 bg-[#1e1f20] border border-[#282a2c] rounded-2xl p-2 shadow-2xl z-30 space-y-1">
+            <button onclick="triggerFilePicker('image')" class="flex items-center space-x-3 w-full px-4 py-2.5 rounded-xl text-xs text-gray-200 hover:bg-[#282a2c] transition">
+              <i data-lucide="image" class="w-4 h-4 text-emerald-400"></i><span>Photos &amp; Gallery</span>
+            </button>
+            <button onclick="triggerFilePicker('file')" class="flex items-center space-x-3 w-full px-4 py-2.5 rounded-xl text-xs text-gray-200 hover:bg-[#282a2c] transition">
+              <i data-lucide="file-text" class="w-4 h-4 text-[#8ab4f8]"></i><span>Files &amp; Documents</span>
+            </button>
+            <button onclick="mockGoogleDrive()" class="flex items-center space-x-3 w-full px-4 py-2.5 rounded-xl text-xs text-gray-200 hover:bg-[#282a2c] transition">
+              <i data-lucide="cloud" class="w-4 h-4 text-amber-400"></i><span>Google Drive</span>
+            </button>
+          </div>
+          <input type="file" id="hiddenFileInput" class="hidden" onchange="handleFileSelected(event)">
+
+          <!-- Bottom Input Bar -->
+          <footer class="p-3 bg-[#131314]">
+            <div class="max-w-3xl mx-auto flex items-end gemini-glass rounded-3xl p-1.5 px-3">
+              <button onclick="toggleAttachmentMenu()" class="p-2 text-gray-400 hover:text-white transition"><i data-lucide="plus" class="w-5 h-5"></i></button>
+              <textarea id="userInput" rows="1" placeholder="Ask anything about coding or games..." class="flex-1 bg-transparent border-0 focus:ring-0 text-sm text-white px-2 py-2 resize-none max-h-32 placeholder-gray-500 outline-none" oninput="autoGrow(this)"></textarea>
+              <button onclick="openVoiceMode()" class="p-2 text-gray-400 hover:text-[#8ab4f8] transition"><i data-lucide="mic" class="w-5 h-5"></i></button>
+              <button onclick="sendMessage()" class="p-2 text-[#8ab4f8] hover:text-white transition"><i data-lucide="send" class="w-5 h-5"></i></button>
+            </div>
+          </footer>
+
+          <!-- ChatGPT / Gemini Living Voice Orb Overlay -->
+          <div id="voiceOverlay" class="hidden fixed inset-0 bg-[#131314]/95 backdrop-blur-2xl z-50 flex flex-col items-center justify-between p-8">
+            <div class="w-full flex justify-end">
+              <button onclick="closeVoiceMode()" class="p-2 rounded-full bg-[#1e1f20] text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+
+            <!-- The Glowing Living Orb -->
+            <div class="relative flex items-center justify-center">
+              <div class="w-48 h-48 rounded-full living-orb"></div>
+              <div class="w-32 h-32 rounded-full bg-gradient-to-tr from-[#8ab4f8] via-[#c58af9] to-[#ff8bcb] absolute flex items-center justify-center shadow-2xl animate-pulse">
+                <i data-lucide="sparkles" class="w-10 h-10 text-white"></i>
+              </div>
+            </div>
+
+            <div class="text-center space-y-2">
+              <p id="voiceLiveTranscript" class="text-base text-gray-200 font-medium">Listening to your voice...</p>
+              <p class="text-xs text-gray-500">Tap below to end session</p>
+              <button onclick="closeVoiceMode()" class="px-6 py-2.5 rounded-full bg-red-500/20 text-red-400 text-xs font-semibold hover:bg-red-500/30 transition">End Voice Session</button>
+            </div>
+          </div>
+
+          <script>
+            lucide.createIcons();
+            const FIREBASE_URL = "https://nova-studio-24-default-rtdb.firebaseio.com";
+            let activeModel = "spark";
+            let messageCount = 0;
+            let totalTokensUsed = 0;
+            let currentChatId = Date.now().toString();
+            let recognition = null;
+
+            function toggleDrawer() {
+              document.getElementById('drawer').classList.toggle('-translate-x-full');
+            }
+
+            function toggleAttachmentMenu() {
+              document.getElementById('attachmentMenu').classList.toggle('hidden');
+            }
+
+            function switchModel(model) {
+              activeModel = model;
+              const btnSpark = document.getElementById('btnSpark');
+              const btnTitan = document.getElementById('btnTitan');
+              const badge = document.getElementById('activeModelBadge');
+
+              if (model === 'spark') {
+                btnSpark.className = "py-1.5 text-xs font-semibold rounded-lg bg-[#8ab4f8] text-[#131314] transition";
+                btnTitan.className = "py-1.5 text-xs font-semibold rounded-lg text-gray-300 hover:text-white transition";
+                badge.innerText = "Spark 1.5B";
+              } else {
+                btnTitan.className = "py-1.5 text-xs font-semibold rounded-lg bg-[#c58af9] text-[#131314] transition";
+                btnSpark.className = "py-1.5 text-xs font-semibold rounded-lg text-gray-300 hover:text-white transition";
+                badge.innerText = "Titan 7B";
+              }
+            }
+
+            function autoGrow(element) {
+              element.style.height = "auto";
+              element.style.height = (element.scrollHeight) + "px";
+            }
+
+            function showNewChatButton() {
+              const btn = document.getElementById('btnNewChat');
+              btn.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
+              btn.classList.add('opacity-100', 'scale-100');
+            }
+
+            function startNewChat() {
+              document.getElementById('chatContainer').innerHTML = `
+                <div id="welcomeScreen" class="h-full flex flex-col items-center justify-center text-center p-6 space-y-3">
+                  <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#8ab4f8] to-[#c58af9] flex items-center justify-center shadow-lg shadow-[#8ab4f8]/20">
+                    <i data-lucide="sparkles" class="w-6 h-6 text-white"></i>
+                  </div>
+                  <h1 class="text-2xl font-bold text-white">Nova Chat Ai</h1>
+                  <p class="text-xs text-gray-400 max-w-xs leading-relaxed">Dedicated Coding, System Architecture &amp; Game Planning Engine.</p>
+                </div>
+              `;
+              lucide.createIcons();
+              messageCount = 0;
+              currentChatId = Date.now().toString();
+              const btn = document.getElementById('btnNewChat');
+              btn.classList.remove('opacity-100', 'scale-100');
+              btn.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
+              toggleDrawer();
+            }
+
+            function updateTokens(promptLen, respLen) {
+              const pTokens = Math.ceil(promptLen / 4);
+              const rTokens = Math.ceil(respLen / 4);
+              totalTokensUsed += (pTokens + rTokens);
+
+              document.getElementById('promptTokens').innerText = pTokens;
+              document.getElementById('respTokens').innerText = rTokens;
+              document.getElementById('totalTokens').innerText = totalTokensUsed;
+              const barWidth = Math.min(100, Math.max(8, (totalTokensUsed / 2048) * 100));
+              document.getElementById('tokenBar').style.width = barWidth + "%";
+            }
+
+            function appendMessage(sender, text) {
+              const welcome = document.getElementById('welcomeScreen');
+              if (welcome) welcome.remove();
+
+              const container = document.getElementById('chatContainer');
+              const msgDiv = document.createElement('div');
+              msgDiv.className = sender === 'user' ? "flex justify-end" : "flex justify-start space-x-3";
+
+              let formattedText = text;
+              if (text.includes("```")) {
+                formattedText = text.replace(/```([a-zA-Z]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+                  return `
+                    <div class="my-2 rounded-xl overflow-hidden border border-[#282a2c] bg-[#1e1f20]">
+                      <div class="flex items-center justify-between px-3 py-1.5 bg-[#131314] text-[11px] font-mono text-gray-400">
+                        <span>${lang || 'CODE'}</span>
+                        <button onclick="copyCode(this)" class="hover:text-white flex items-center space-x-1">
+                          <i data-lucide="copy" class="w-3.5 h-3.5"></i><span>Copy</span>
+                        </button>
+                      </div>
+                      <pre class="p-3 text-xs font-mono text-emerald-400 overflow-x-auto"><code>${code.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</code></pre>
+                    </div>
+                  `;
+                });
+              } else {
+                formattedText = `<p class="text-sm leading-relaxed whitespace-pre-wrap">${text}</p>`;
+              }
+
+              if (sender === 'user') {
+                msgDiv.innerHTML = `<div class="max-w-[85%] bg-[#1e1f20] border border-[#282a2c] text-white p-3 px-4 rounded-2xl rounded-tr-sm">${formattedText}</div>`;
+              } else {
+                msgDiv.innerHTML = `
+                  <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#8ab4f8] to-[#c58af9] flex items-center justify-center shrink-0 mt-1">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-white"></i>
+                  </div>
+                  <div class="max-w-[85%] text-gray-200">${formattedText}</div>
+                `;
+              }
+
+              container.appendChild(msgDiv);
+              container.scrollTop = container.scrollHeight;
+              lucide.createIcons();
+
+              messageCount++;
+              if (messageCount === 1) {
+                showNewChatButton();
+              }
+            }
+
+            function copyCode(btn) {
+              const code = btn.closest('div').nextElementSibling.innerText;
+              navigator.clipboard.writeText(code);
+              btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i><span class="text-emerald-400">Copied!</span>`;
+              lucide.createIcons();
+              setTimeout(() => {
+                btn.innerHTML = `<i data-lucide="copy" class="w-3.5 h-3.5"></i><span>Copy</span>`;
+                lucide.createIcons();
+              }, 2000);
+            }
+
+            async function sendMessage() {
+              const input = document.getElementById('userInput');
+              const text = input.value.trim();
+              if (!text) return;
+
+              input.value = "";
+              input.style.height = "auto";
+              appendMessage('user', text);
+
+              // মাস্টার কোড চেক
+              if (text === "#OWNER-BOSS-999") {
+                appendMessage('ai', "👑 **স্বাগতম বস (Nova Studio 24)!**\nআপনার মালিকানা সফলভাবে স্বীকৃত হয়েছে। আপনার জন্য আনলিমিটেড লাইফটাইম এক্সেস উন্মুক্ত করা হলো!");
+                return;
+              }
+
+              // টাইপিং নির্দেশক
+              const container = document.getElementById('chatContainer');
+              const typingDiv = document.createElement('div');
+              typingDiv.id = "typingIndicator";
+              typingDiv.className = "flex items-center space-x-2 text-xs text-gray-500 font-mono";
+              typingDiv.innerHTML = `
+                <div class="w-2 h-2 rounded-full bg-[#8ab4f8] animate-ping"></div>
+                <span>Nova ${activeModel.toUpperCase()} is thinking...</span>
+              `;
+              container.appendChild(typingDiv);
+              container.scrollTop = container.scrollHeight;
+
+              // Firebase-এ রিকোয়েস্ট পাঠানো
+              const reqId = "req_" + Date.now();
+              try {
+                await fetch(`${FIREBASE_URL}/requests/pending/${reqId}.json`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    user_id: "user_mobile",
+                    prompt: text,
+                    model: activeModel,
+                    timestamp: Math.floor(Date.now() / 1000)
+                  })
+                });
+
+                // উত্তরের জন্য পোলিং (Firebase Completed চেক)
+                let attempts = 0;
+                const pollInterval = setInterval(async () => {
+                  attempts++;
+                  try {
+                    const res = await fetch(`${FIREBASE_URL}/requests/completed/${reqId}.json`);
+                    const data = await res.json();
+
+                    if (data && data.response) {
+                      clearInterval(pollInterval);
+                      const tElem = document.getElementById('typingIndicator');
+                      if (tElem) tElem.remove();
+
+                      appendMessage('ai', data.response);
+                      updateTokens(text.length, data.response.length);
+
+                      // কমপ্লিট হয়ে গেলে ফায়ারবেস ক্লিন করা
+                      fetch(`${FIREBASE_URL}/requests/completed/${reqId}.json`, { method: 'DELETE' });
+                    }
+                  } catch (e) {}
+
+                  if (attempts > 60) {
+                    clearInterval(pollInterval);
+                    const tElem = document.getElementById('typingIndicator');
+                    if (tElem) tElem.remove();
+                    appendMessage('ai', "⚠️ Engine Timeout: Make sure 'Nova Titan Engine' app is running in the background!");
+                  }
+                }, 1500);
+
+              } catch (err) {
+                const tElem = document.getElementById('typingIndicator');
+                if (tElem) tElem.remove();
+                appendMessage('ai', "[-] Connection Error: " + err.message);
+              }
+            }
+
+            // ==========================================
+            // ChatGPT / Gemini Voice Interaction
+            // ==========================================
+            function openVoiceMode() {
+              document.getElementById('voiceOverlay').classList.remove('hidden');
+              const transcript = document.getElementById('voiceLiveTranscript');
+              transcript.innerText = "Listening to your voice...";
+
+              const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+              if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.lang = 'bn-BD';
+                recognition.interimResults = true;
+
+                recognition.onresult = (event) => {
+                  const speechResult = event.results[0][0].transcript;
+                  transcript.innerText = speechResult;
+                };
+
+                recognition.onend = () => {
+                  const spokenText = transcript.innerText;
+                  if (spokenText && spokenText !== "Listening to your voice...") {
+                    closeVoiceMode();
+                    document.getElementById('userInput').value = spokenText;
+                    sendMessage();
+                  }
+                };
+
+                recognition.start();
+              } else {
+                transcript.innerText = "Speech Recognition not supported in this WebView.";
+              }
+            }
+
+            function closeVoiceMode() {
+              if (recognition) {
+                recognition.stop();
+                recognition = null;
+              }
+              document.getElementById('voiceOverlay').classList.add('hidden');
+            }
+
+            function triggerFilePicker(type) {
+              toggleAttachmentMenu();
+              const fInput = document.getElementById('hiddenFileInput');
+              if (type === 'image') fInput.accept = "image/*";
+              else fInput.accept = "*/*";
+              fInput.click();
+            }
+
+            function handleFileSelected(event) {
+              const file = event.target.files[0];
+              if (file) {
+                appendMessage('user', `📎 Attached File: **${file.name}** (${(file.size / 1024).toFixed(1)} KB)`);
+              }
+            }
+
+            function mockGoogleDrive() {
+              toggleAttachmentMenu();
+              appendMessage('ai', "📁 **Google Drive Connected:**\nPlease select which project file or game asset you wish to link into the prompt.");
+            }
+          </script>
+        </body>
+        </html>
+        EOF
+
+        # 7. MainActivity.java (Hardware WebChromeClient with Voice Permissions)
+        cat << 'EOF' > app/src/main/java/com/novastudio24/chat/MainActivity.java
+        package com.novastudio24.chat;
+
+        import android.app.Activity;
+        import android.os.Bundle;
+        import android.webkit.PermissionRequest;
+        import android.webkit.WebChromeClient;
+        import android.webkit.WebSettings;
+        import android.webkit.WebView;
+        import android.content.pm.PackageManager;
+        import android.Manifest;
+
+        public class MainActivity extends Activity {
+            private WebView webView;
+
+            @Override
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                setContentView(R.layout.activity_main);
+
+                webView = findViewById(R.id.chatWebView);
+                WebSettings settings = webView.getSettings();
+                settings.setJavaScriptEnabled(true);
+                settings.setDomStorageEnabled(true);
+                settings.setAllowFileAccess(true);
+                settings.setDatabaseEnabled(true);
+
+                // মাইক্রোফোন ও অডিও অনুমতি দেওয়া (Web Speech API সচল রাখার জন্য)
+                webView.setWebChromeClient(new WebChromeClient() {
+                    @Override
+                    public void onPermissionRequest(final PermissionRequest request) {
+                        request.grant(request.getResources());
+                    }
+                });
+
+                if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 101);
+                }
+
+                webView.loadUrl("file:///android_asset/www/index.html");
+            }
+
+            @Override
+            public void onBackPressed() {
+                if (webView.canGoBack()) {
+                    webView.goBack();
+                } else {
+                    super.onBackPressed();
+                }
+            }
+        }
+        EOF
+
+    - name: Build Android APK
+      run: |
+        gradle assembleDebug --no-daemon
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Nova-Chat-Ai-APK
+        path: app/build/outputs/apk/debug/app-debug.apk
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/heads/main')
+      with:
+        tag_name: v1.0.0
+        name: "Nova Chat Ai v1.0.0 (Ultra-Premium Release)"
+        body: "Official Nova Chat Ai Client with Gemini Dark UI, Dynamic Actions & Living Voice Orb by Nova Studio 24."
+        files: app/build/outputs/apk/debug/app-debug.apk
