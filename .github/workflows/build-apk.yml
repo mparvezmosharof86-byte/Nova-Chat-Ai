@@ -31,7 +31,7 @@ jobs:
       run: |
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-    - name: Scaffold Nova Chat Absolute Fix Project
+    - name: Scaffold Nova Chat Cloud Master Project
       run: |
         mkdir -p app/src/main/java/com/novastudio24/chat
         mkdir -p app/src/main/res/layout
@@ -78,8 +78,8 @@ jobs:
                 applicationId "com.novastudio24.chat"
                 minSdk 24
                 targetSdk 34
-                versionCode 3
-                versionName "1.2.0"
+                versionCode 4
+                versionName "2.0.0"
             }
 
             buildTypes {
@@ -145,7 +145,7 @@ jobs:
         </FrameLayout>
         EOF
 
-        # 6. Absolute Fixed Web UI
+        # 6. Ultimate Cloud-Synced Web UI
         cat << 'EOF' > app/src/main/assets/www/index.html
         <!DOCTYPE html>
         <html lang="bn">
@@ -184,15 +184,15 @@ jobs:
             <div class="mt-4 p-1.5 bg-[#131314] rounded-xl border border-[#282a2c]">
               <span class="text-[11px] text-gray-400 px-2 font-medium">SELECT MODEL</span>
               <div class="grid grid-cols-2 gap-1 mt-1">
-                <button id="btnSpark" onclick="switchModel('spark')" class="py-1.5 text-xs font-semibold rounded-lg bg-[#8ab4f8] text-[#131314] transition">Spark 1.5B</button>
-                <button id="btnTitan" onclick="switchModel('titan')" class="py-1.5 text-xs font-semibold rounded-lg text-gray-300 hover:text-white transition">Titan 7B</button>
+                <button id="btnSpark" onclick="switchModel('spark')" class="py-1.5 text-xs font-semibold rounded-lg bg-[#8ab4f8] text-[#131314] transition">Nova Titan Pro</button>
+                <button id="btnTitan" onclick="switchModel('titan')" class="py-1.5 text-xs font-semibold rounded-lg text-gray-300 hover:text-white transition">Elite Security</button>
               </div>
             </div>
 
             <div class="mt-4 p-3 bg-[#131314] rounded-xl border border-[#282a2c]">
               <div class="flex items-center justify-between text-xs text-gray-400 font-semibold mb-2">
                 <span>TOKEN METRICS</span>
-                <span id="tokenStatus" class="text-emerald-400">ACTIVE</span>
+                <span id="tokenStatus" class="text-emerald-400">CLOUD SYNC</span>
               </div>
               <div class="space-y-1.5 text-[11px] text-gray-300 font-mono">
                 <div class="flex justify-between"><span>Prompt:</span><span id="promptTokens" class="text-[#8ab4f8]">0</span></div>
@@ -217,7 +217,7 @@ jobs:
             <button onclick="toggleDrawer()" class="p-2 rounded-full hover:bg-[#1e1f20] text-gray-300"><i data-lucide="menu" class="w-5 h-5"></i></button>
             <div class="flex items-center space-x-2">
               <span class="font-semibold text-base tracking-wide text-white">Nova Chat Ai</span>
-              <span id="activeModelBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-[#1e1f20] text-[#8ab4f8] font-mono border border-[#282a2c]">Spark 1.5B</span>
+              <span id="activeModelBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-[#1e1f20] text-[#8ab4f8] font-mono border border-[#282a2c]">Titan Pro</span>
             </div>
             <button id="btnNewChat" onclick="startNewChat()" class="p-2 rounded-full hover:bg-[#1e1f20] text-[#8ab4f8] opacity-0 scale-75 pointer-events-none transition-all duration-300">
               <i data-lucide="plus" class="w-5 h-5"></i>
@@ -231,7 +231,7 @@ jobs:
                 <i data-lucide="sparkles" class="w-6 h-6 text-white"></i>
               </div>
               <h1 class="text-2xl font-bold text-white">Nova Chat Ai</h1>
-              <p class="text-xs text-gray-400 max-w-xs leading-relaxed">Absolute Fixed Local &amp; Cloud Hybrid Bridge.</p>
+              <p class="text-xs text-gray-400 max-w-xs leading-relaxed">Connected directly to Google Colab Cloud Master Engine.</p>
             </div>
           </main>
 
@@ -253,7 +253,7 @@ jobs:
           <footer class="p-3 bg-[#131314]">
             <div class="max-w-3xl mx-auto flex items-end gemini-glass rounded-3xl p-1.5 px-3">
               <button onclick="toggleAttachmentMenu()" class="p-2 text-gray-400 hover:text-white transition"><i data-lucide="plus" class="w-5 h-5"></i></button>
-              <textarea id="userInput" rows="1" placeholder="Ask anything about coding or games..." class="flex-1 bg-transparent border-0 focus:ring-0 text-sm text-white px-2 py-2 resize-none max-h-32 placeholder-gray-500 outline-none" oninput="autoGrow(this)"></textarea>
+              <textarea id="userInput" rows="1" placeholder="Ask anything about coding, games or security..." class="flex-1 bg-transparent border-0 focus:ring-0 text-sm text-white px-2 py-2 resize-none max-h-32 placeholder-gray-500 outline-none" oninput="autoGrow(this)"></textarea>
               <button onclick="openVoiceMode()" class="p-2 text-gray-400 hover:text-[#8ab4f8] transition"><i data-lucide="mic" class="w-5 h-5"></i></button>
               <button onclick="sendMessage()" class="p-2 text-[#8ab4f8] hover:text-white transition"><i data-lucide="send" class="w-5 h-5"></i></button>
             </div>
@@ -278,7 +278,6 @@ jobs:
 
           <script>
             lucide.createIcons();
-            const LOCAL_ENGINE_URL = "http://127.0.0.1:8080/v1/chat/completions";
             const FIREBASE_URL = "https://nova-studio-24-default-rtdb.firebaseio.com";
             
             let activeModel = "spark";
@@ -298,11 +297,11 @@ jobs:
               if (model === 'spark') {
                 btnSpark.className = "py-1.5 text-xs font-semibold rounded-lg bg-[#8ab4f8] text-[#131314] transition";
                 btnTitan.className = "py-1.5 text-xs font-semibold rounded-lg text-gray-300 hover:text-white transition";
-                badge.innerText = "Spark 1.5B";
+                badge.innerText = "Titan Pro";
               } else {
                 btnTitan.className = "py-1.5 text-xs font-semibold rounded-lg bg-[#c58af9] text-[#131314] transition";
                 btnSpark.className = "py-1.5 text-xs font-semibold rounded-lg text-gray-300 hover:text-white transition";
-                badge.innerText = "Titan 7B";
+                badge.innerText = "Elite Security";
               }
             }
 
@@ -324,7 +323,7 @@ jobs:
                     <i data-lucide="sparkles" class="w-6 h-6 text-white"></i>
                   </div>
                   <h1 class="text-2xl font-bold text-white">Nova Chat Ai</h1>
-                  <p class="text-xs text-gray-400 max-w-xs leading-relaxed">Absolute Fixed Local &amp; Cloud Hybrid Bridge.</p>
+                  <p class="text-xs text-gray-400 max-w-xs leading-relaxed">Connected directly to Google Colab Cloud Master Engine.</p>
                 </div>
               `;
               lucide.createIcons();
@@ -342,7 +341,7 @@ jobs:
               document.getElementById('promptTokens').innerText = p;
               document.getElementById('respTokens').innerText = r;
               document.getElementById('totalTokens').innerText = totalTokensUsed;
-              document.getElementById('tokenBar').style.width = Math.min(100, Math.max(10, (totalTokensUsed / 2048) * 100)) + "%";
+              document.getElementById('tokenBar').style.width = Math.min(100, Math.max(10, (totalTokensUsed / 4096) * 100)) + "%";
             }
 
             function appendMessage(sender, text) {
@@ -412,7 +411,7 @@ jobs:
               appendMessage('user', text);
 
               if (text === "#OWNER-BOSS-999") {
-                appendMessage('ai', "👑 **স্বাগতম বস (Nova Studio 24)!**\nআপনার মালিকানা সফলভাবে স্বীকৃত হয়েছে। আপনার জন্য আনলিমিটেড লাইফটাইম এক্সেস উন্মুক্ত!");
+                appendMessage('ai', "👑 **স্বাগতম বস (Nova Studio 24)!**\nআপনার মালিকানা সফলভাবে স্বীকৃত হয়েছে। আপনার জন্য লেভেল-৩ গভমেন্ট এল্লিট সিকিউরিটি ক্লিয়ারেন্স আনলক করা হয়েছে!");
                 return;
               }
 
@@ -420,39 +419,11 @@ jobs:
               const typingDiv = document.createElement('div');
               typingDiv.id = "typingIndicator";
               typingDiv.className = "flex items-center space-x-2 text-xs text-gray-500 font-mono";
-              typingDiv.innerHTML = `<div class="w-2 h-2 rounded-full bg-[#8ab4f8] animate-ping"></div><span>Nova Engine generating...</span>`;
+              typingDiv.innerHTML = `<div class="w-2 h-2 rounded-full bg-[#8ab4f8] animate-ping"></div><span>Nova Titan Pro Cloud Generating...</span>`;
               container.appendChild(typingDiv);
               container.scrollTop = container.scrollHeight;
 
-              // চেষ্টা ১: সরাসরি লোকাল পোর্ট ৮০৮০ তে রিকোয়েস্ট পাঠানো
-              try {
-                const localRes = await fetch(LOCAL_ENGINE_URL, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    model: activeModel === 'spark' ? 'qwen2.5-coder-1.5b' : 'qwen2.5-coder-7b',
-                    messages: [
-                      { role: 'system', content: 'You are Nova Titan Coder by Nova Studio 24. Write clean, complete code and explain logic clearly.' },
-                      { role: 'user', content: text }
-                    ],
-                    max_tokens: 2048,
-                    temperature: 0.2
-                  })
-                });
-
-                if (localRes.ok) {
-                  const data = await localRes.json();
-                  const answer = data.choices[0].message.content;
-                  document.getElementById('typingIndicator').remove();
-                  appendMessage('ai', answer);
-                  updateTokens(text.length, answer.length);
-                  return;
-                }
-              } catch (e) {
-                // লোকাল ফেল করলে ফায়ারবেসে যাবে
-              }
-
-              // চেষ্টা ২: ফায়ারবেস ব্যাকআপ ব্রিজ
+              // ফায়ারবেস ক্লাউড ব্রিজের মাধ্যমে কোড পাঠানো
               const reqId = "req_" + Date.now();
               try {
                 await fetch(`${FIREBASE_URL}/requests/pending/${reqId}.json`, {
@@ -461,7 +432,7 @@ jobs:
                   body: JSON.stringify({
                     user_id: "user_mobile",
                     prompt: text,
-                    model: activeModel,
+                    clearance: activeModel === 'spark' ? 'Level_2_Developer' : 'Level_3_Government_Elite',
                     timestamp: Math.floor(Date.now() / 1000)
                   })
                 });
@@ -482,16 +453,16 @@ jobs:
                     }
                   } catch (e) {}
 
-                  if (attempts > 45) {
+                  if (attempts > 60) {
                     clearInterval(pollInterval);
                     document.getElementById('typingIndicator').remove();
-                    appendMessage('ai', "⚠️ Engine Timeout: Make sure 'Nova Titan Engine' app is running in the background!");
+                    appendMessage('ai', "⚠️ Cloud Timeout: Please ensure your Google Colab master notebook is running the 24/7 server loop!");
                   }
                 }, 1500);
 
               } catch (err) {
                 document.getElementById('typingIndicator').remove();
-                appendMessage('ai', "[-] Error: " + err.message);
+                appendMessage('ai', "[-] Cloud Connection Error: " + err.message);
               }
             }
 
@@ -603,14 +574,14 @@ jobs:
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Nova-Chat-Ai-v1.2.0
+        name: Nova-Chat-Ai-v2.0.0
         path: app/build/outputs/apk/debug/app-debug.apk
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/heads/main')
       with:
-        tag_name: v1.2.0
-        name: "Nova Chat Ai v1.2.0 (Absolute Fix)"
-        body: "Absolute Fixed Localhost & Hybrid Bridge by Nova Studio 24."
+        tag_name: v2.0.0
+        name: "Nova Chat Ai v2.0.0 (Cloud Master Bridge)"
+        body: "Official Cloud-Synced Nova Chat Ai Client connected directly to Google Colab Llama 3 by Nova Studio 24."
         files: app/build/outputs/apk/debug/app-debug.apk
